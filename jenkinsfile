@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+
+    environment {
+        BRANCH_NAME = env.BRANCH_NAME
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            when {
+                branch 'dev'
+            }
+            steps {
+                echo 'Building for dev branch...'
+                // Add commands to run your build, such as maven, gradle, etc.
+            }
+        }
+
+        stage('Test') {
+            when {
+                branch 'dev'
+            }
+            steps {
+                echo 'Running tests for dev branch...'
+                // Add testing commands (e.g., running unit tests).
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                branch 'prod'
+            }
+            steps {
+                echo 'Deploying for prod branch...'
+                // Add commands for deploying to production.
+            }
+        }
+
+        stage('Notify') {
+            steps {
+                echo 'Sending notifications...'
+                // Send notifications (e.g., Slack, email) for all branches after completion.
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Clean up"
+            // Any clean-up tasks
+        }
+    }
+}
