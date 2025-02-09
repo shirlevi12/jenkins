@@ -1,0 +1,72 @@
+pipeline {
+    agent any
+    environment {
+        REGISTRY = "aws_account_id.dkr.ecr.region.amazonaws.com/my-repo"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    // התקנת תלויות
+                    sh 'pip install -r requirements.txt'
+                }
+            }
+        }
+
+        stage('Test') {
+            when {
+                branch 'dev'
+            }
+            steps {
+                script {
+                    // הרצת בדיקות אם הסניף הוא dev
+                    sh 'pytest'
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            when {
+                branch 'dev'
+            }
+            steps {
+                script {
+                    // בניית Docker Image אם הסניף הוא dev
+                    sh 'docker build -t $REGISTRY:dev .'
+                }
+            }
+        }
+
+        stage('Push to ECR') {
+            when {
+                branch 'dev'
+            }
+            steps {
+                script {
+                    // התחברות ל-ECR
+                    sh 'aws ecr get-login-password --region region | docker login --username AWS --password-stdin $REGISTRY'
+                    // Push לתמונה ל-ECR
+                    sh 'docker push $REGISTRY:dev'
+                }
+            }
+        }
+
+        stage('Deploy to ECS') {
+            when {
+                branch 'prod'
+            }
+            steps {
+                script {
+                    // פריסת Docker Image ל-ECS אם הסניף הוא prod
+                    sh 'aws ecs update-service --cluster my-cluster --service my-service --force-new-deployment'
+                }
+            }
+        }
+    }
+}
